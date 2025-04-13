@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>智能医疗数字人</title>
+
+    <!-- 页面样式 -->
+    <style>
+        html, body {
+            width: 100%;
+        }
+
+        video {
+            width: 65%;
+            height: auto;
+            border: 5px solid #333;
+            margin: 20px auto;
+            display: block;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            background-image: url('./img/background.png'); /* 保留原背景图 */
+        }
+
+        div h1 {
+            text-align: center;
+            font-family: '楷体', KaiTi, serif;
+            color: white;
+        }
+
+        #userSendArea {
+            width: 508px;
+            margin: 0 auto;
+        }
+
+        .responseText {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #f9f9f9;
+        }
+    </style>
+
+    <!-- 引入 Azure Avatar SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@latest/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
+</head>
+
+<body>
+<!-- 欢迎语 -->
+<div>
+    <h1>您好，我是您的智能医疗数字助手</h1>
+</div>
+
+<!-- AI 回复区域 -->
+<div id="responseArea"></div>
+
+<script>
+    var SpeechSDK;
+    var peerConnection;
+
+    // Azure 语音服务订阅配置（建议放到后端处理）
+    var cogSvcRegin = "southeastasia";
+    var subscriptionKey = "YOUR_AZURE_SPEECH_KEY";
+
+    // 播报函数：根据情绪切换语音风格
+    var speakerHandel = function (avatarSynthesizer, msg, qingxu) {
+        var yinse = document.getElementById("voiceSelect").value;
+
+        var spokenSsml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' 
+                xmlns:mstts='http://www.w3.org/2001/mstts' xml:lang='zh-CN'>
+        <voice name='${yinse}'>
+            <mstts:express-as style='${qingxu}' role='YoungAdultFemale' styledegreee='2'>${msg}</mstts:express-as>
+        </voice></speak>`;
+
+        avatarSynthesizer.speakSsmlAsync(spokenSsml).then((r) => {
+            console.log("speakSsmlAsync result: " + r);
+        }).catch((e) => {
+            console.log("speakSsmlAsync failed: " + e);
+            avatarSynthesizer.close();
+        });
+    }
+
+    // 与后端交互，获取AI回复
+    var chatWithAI = function (avatarSynthesizer) {
+        var chatInput = document.getElementById("chatInput");
+        var chatText = chatInput.value;
+        console.log("用户输入：" + chatText);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", `http://127.0.0.1:8000/chat?query=${chatText}`);
+        xhr.addEventListener("readystatechange", function () {
+            if (this.readyState === 4) {
+                var responseData = JSON.parse(this.responseText);
+                console.log("AI 回复：" + responseData);
+                speakerHandel(avatarSynthesizer, responseData[0].msg, responseData[0].qingxu);
+
+                var responseArea = document.getElementById("responseArea");
+                responseArea.innerHTML = '<div class="responseText">' + responseData[0].msg + '</div>';
+                chatInput.value = "";
+            }
+        });
+        xhr.send();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, cogSvcRegin);
+        speechConfig.speechSynthesisVoiceName = "zh-CN-XiaozhenNeural";
+        speechConfig.speechSynthesisLanguage = "zh-CN";
+        var videoFormat = new SpeechSDK.AvatarVideoFormat();
+
+        // 角色设定
+        const avatarConfig = new SpeechSDK.AvatarConfig(
+            "lisa",
+            "casual-sitting",
+            videoFormat,
+        );
+
+        // 获取 relay token 并连接 WebRTC
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", `https://${cogSvcRegin}.tts.speech.microsoft.com/cognitiveservices/avatar/relay/token/v1`);
+        xhr.setRequestHeader("Ocp-Apim-Subscription-Key", subscriptionKey);
+        xhr.addEventListener("readystatechange", function () {
+            if (this.readyState === 4) {
+                var responseData = JSON.parse(this.responseText);
+                var iceServerUrl = responseData.Urls[0];
+                var iceServerUsername = responseData.Username;
+                var iceServerCredential = responseData.Password;
+
+                peerConnection = new RTCPeerConnection({
+                    iceServers: [{
+                        urls: [iceServerUrl],
+                        username: iceServerUsername,
+                        credential: iceServerCredential
+                    }]
+                });
+
+                // 渲染视频流
+                peerConnection.ontrack = function (event) {
+                    if (event.track.kind === "video") {
+                        var videoElement = document.createElement("video");
+                        videoElement.srcObject = event.streams[0];
+                        videoElement.autoplay = true;
+                        videoElement.id = "videoPlayer";
+                        videoElement.playsInline = true;
+                        document.body.appendChild(videoElement);
+                    }
+
+                    if (event.track.kind === "audio") {
+                        var audioElement = document.createElement("audio");
+                        audioElement.srcObject = event.streams[0];
+                        audioElement.autoplay = true;
+                        audioElement.id = "audioPlayer";
+                        document.body.appendChild(audioElement);
+                    }
+                }
+
+                peerConnection.oniceconnectionstatechange = function () {
+                    console.log("WebRTC 状态: " + peerConnection.iceConnectionState);
+                }
+
+                peerConnection.addTransceiver("video", {direction: "sendrecv"});
+                peerConnection.addTransceiver("audio", {direction: "sendrecv"});
+
+                var avatarSynthesizer = new SpeechSDK.AvatarSynthesizer(speechConfig, avatarConfig);
+                avatarSynthesizer.startAvatarAsync(peerConnection).then(() => {
+                    console.log("Avatar started");
+
+                    // 输入区域
+                    var chatInput = document.createElement("input");
+                    chatInput.type = "text";
+                    chatInput.placeholder = "请输入您的健康问题，我来为您解答";
+                    chatInput.id = "chatInput";
+                    chatInput.style = "width:300px;height:50px;";
+
+                    // 语音选择器
+                    var voiceSelect = document.createElement("select");
+                    voiceSelect.id = "voiceSelect";
+                    voiceSelect.style = "width:100px;height:56px;";
+                    voiceSelect.innerHTML = `
+                        <option value="zh-HK-HiuMaanNeural">粤语</option>
+                        <option value="zh-TW-HsiaoChenNeural">台湾腔</option>
+                        <option value="zh-CN-shaanxi-XiaoniNeural">陕西话</option>
+                        <option value="zh-CN-XiaomoNeural" selected>普通话</option>`;
+
+                    var sendButton = document.createElement("button");
+                    sendButton.innerHTML = "发送";
+                    sendButton.style = "width:100px;height:56px;";
+
+                    // 用户输入区域
+                    var userInput = document.createElement("div");
+                    userInput.setAttribute("id", "userSendArea");
+                    userInput.appendChild(chatInput);
+                    userInput.appendChild(voiceSelect);
+                    userInput.appendChild(sendButton);
+                    document.body.appendChild(userInput);
+
+                    // 点击发送后触发与 AI 交互
+                    sendButton.addEventListener("click", function () {
+                        var videoPlayer = document.getElementById("videoPlayer");
+                        var audioPlayer = document.getElementById("audioPlayer");
+                        videoPlayer.muted = false;
+                        audioPlayer.muted = false;
+                        videoPlayer.play();
+                        audioPlayer.play();
+                        chatWithAI(avatarSynthesizer);
+                    });
+                });
+            }
+        });
+        xhr.send();
+
+        if (!!window.SpeechSDK) {
+            SpeechSDK = window.SpeechSDK;
+        }
+    });
+</script>
+</body>
+</html>
