@@ -1,6 +1,6 @@
 # 智能医疗数字人系统（本地大模型 + 多模态交互）
 
-本项目是一个结合本地大语言模型（Qwen2.5）、RAG 问答系统、多模态情绪识别、语音合成与数字人视频播报的 AI 医疗问答系统，具备医疗问答、情绪识别、语音播报、视频交互等功能，适合部署为线下医疗服务助手或医疗客服交互系统。
+本项目是一个结合本地大语言模型（Qwen2.5）、RAG 问答系统、多模态情绪识别、语音合成与数字人视频播报的 AI 医疗问答系统，具备医疗问答、情绪识别、语音播报、视频交互等功能
 ![image](https://github.com/user-attachments/assets/c1fdfcf9-887d-4395-b2c4-59642a1dd67d)
 
 ------
@@ -20,7 +20,7 @@
 | 技术模块   | 技术栈                                  |
 | ---------- | --------------------------------------- |
 | 后端框架   | FastAPI                                 |
-| 大语言模型 | Qwen2.5-7B-Instruct (LoRA 微调可选)     |
+| 大语言模型 | Qwen2.5-7B-Instruct (LoRA 微调)     |
 | 向量检索   | Chroma + HuggingFace BGE Embedding      |
 | 检索融合   | BM25 + Embedding + CrossEncoderReranker |
 | 文档处理   | LangChain Loader + Splitter             |
@@ -68,24 +68,6 @@ python server_qwen.py
 
 ------
 
-## 🧪 接口说明
-
-### POST /chat
-
-- 参数：`query`（用户问题字符串）
-- 返回：
-
-```json
-[
-  {
-    "msg": "这是模型给出的医疗回答",
-    "qingxu": "friendly"
-  }
-]
-```
-
-------
-
 ## 🖥️ 前端使用说明
 
 前端文件为 `index_medical.html`，直接用浏览器打开即可。
@@ -97,18 +79,19 @@ python server_qwen.py
 
 ------
 
-## 📁 项目结构
+## 📁 项目结构与说明
 
-```
-.
-├── my_local_qwen.py
-├── RAG_answer_qwen.py
-├── server_qwen.py
-├── index_medical.html
-├── turnserver.conf
-├── redis.conf
-├── chroma/knowledge/
-├── record_manager_cache.sql
+| 文件/目录                  | 功能说明                                                |
+|---------------------------|---------------------------------------------------------|
+| `RAG_answer_qwen.py`      | 构建基于本地 Qwen 模型的 RAG 检索问答链                |
+| `server_qwen.py`          | FastAPI 主服务入口，提供问答与情绪识别 API             |
+| `index_medical.html`      | 网页前端界面，实现医疗数字人与用户交互                  |
+| `my_local_qwen.py`        | 封装本地 Qwen 模型的推理接口，兼容 LangChain            |
+| `.env`                    | 示例环境变量配置文件（模型地址、Azure Key）             |
+| `Dockerfile`              | 用于构建部署整个服务的 Docker 容器镜像                  |
+| `requirements.txt`        | 项目依赖清单，支持本地 pip 安装环境                     |
+| `turnserver.conf`         | WebRTC TURN 服务配置文件，确保音视频畅通
+
 ```
 
 ------
