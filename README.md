@@ -1,6 +1,7 @@
 # 智能医疗数字人系统（本地大模型 + 多模态交互）
 
 本项目是一个结合本地大语言模型（Qwen2.5）、RAG 问答系统、多模态情绪识别、语音合成与数字人视频播报的 AI 医疗问答系统，具备医疗问答、情绪识别、语音播报、视频交互等功能，适合部署为线下医疗服务助手或医疗客服交互系统。
+![image](https://github.com/user-attachments/assets/c1fdfcf9-887d-4395-b2c4-59642a1dd67d)
 
 ------
 
@@ -11,21 +12,6 @@
 - 😃 **情绪识别**：识别用户输入情绪（如沮丧、开心、愤怒），用于调节语音风格。
 - 🗣️ **数字人语音合成**：接入 Azure Avatar SDK，支持粤语、普通话、台湾腔、陕西话等。
 - 🎥 **虚拟人交互视频**：通过 WebRTC 实现视频数字人播报、语音与图像交互。
-
-------
-
-## 🧩 系统架构
-
-```mermaid
-graph TD
-    A[用户网页交互] -->|文本输入| B[FastAPI 服务接口]
-    B -->|调用| C[RAG 问答引擎 (LangChain + Qwen)]
-    B -->|调用| D[情绪识别模块]
-    B -->|返回| E[前端网页]
-    E -->|播报| F[Azure Avatar SDK]
-    C -->|读取| G[Chroma 知识库]
-    G -->|索引管理| H[SQLRecordManager.sqlite]
-```
 
 ------
 
@@ -53,7 +39,53 @@ graph TD
 pip install -r requirements.txt
 ```
 
-### 2. 本地部署大语言模型 API
+### 2. 本地微调并部署大语言模型 API
+
+基于LLAMA疗数字人系统（本地大模型 + 多模态交互）
+
+本项目是一个结合本地大语言模型（Qwen2.5）、RAG 问答系统、多模态情绪识别、语音合成与数字人视频播报的 AI 医疗问答系统，具备医疗问答、情绪识别、语音播报、视频交互等功能，适合部署为线下医疗服务助手或医疗客服交互系统。
+![image](https://github.com/user-attachments/assets/c1fdfcf9-887d-4395-b2c4-59642a1dd67d)
+
+------
+
+## 📌 项目亮点
+
+- 🧠 **本地部署大语言模型**：基于 Qwen2.5-7B-Instruct 微调模型，无需外部API，保障隐私。
+- 📚 **RAG语义增强问答**：文档自动索引，结合向量检索 + BM25 + rerank，多策略融合。
+- 😃 **情绪识别**：识别用户输入情绪（如沮丧、开心、愤怒），用于调节语音风格。
+- 🗣️ **数字人语音合成**：接入 Azure Avatar SDK，支持粤语、普通话、台湾腔、陕西话等。
+- 🎥 **虚拟人交互视频**：通过 WebRTC 实现视频数字人播报、语音与图像交互。
+
+------
+
+## 🛠️ 使用技术
+
+| 技术模块   | 技术栈                                  |
+| ---------- | --------------------------------------- |
+| 后端框架   | FastAPI                                 |
+| 大语言模型 | Qwen2.5-7B-Instruct (LoRA 微调可选)     |
+| 向量检索   | Chroma + HuggingFace BGE Embedding      |
+| 检索融合   | BM25 + Embedding + CrossEncoderReranker |
+| 文档处理   | LangChain Loader + Splitter             |
+| 情绪识别   | Prompt + LLM 分类器                     |
+| 前端交互   | HTML + JS + Azure Avatar SDK            |
+| 语音播报   | Azure Neural TTS (多语言多语调)         |
+| 视频传输   | WebRTC TURN Server                      |
+
+------
+
+## 🚀 快速部署说明
+
+### 1. 安装依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. 本地微调并部署大语言模型 API
+
+LLaMA-factory 微调医疗数据集，微调文档
+https://www.yuque.com/u52841425/io1697/de7zu901cy8fedvu?singleDoc#  密码：mgzw
 
 确保 Qwen2.5 模型已使用如 LLaMA-Factory 微调并运行 Web 接口服务：
 
