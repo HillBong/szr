@@ -85,14 +85,12 @@ python server_qwen.py
 |---------------------------|---------------------------------------------------------|
 | `RAG_answer_qwen.py`      | 构建基于本地 Qwen 模型的 RAG 检索问答链                |
 | `server_qwen.py`          | FastAPI 主服务入口，提供问答与情绪识别 API             |
-| `index_medical.html`      | 网页前端界面，实现医疗数字人与用户交互                  |
+| `static/index_medical.html`      | 网页前端界面，实现医疗数字人与用户交互           |
 | `my_local_qwen.py`        | 封装本地 Qwen 模型的推理接口，兼容 LangChain            |
 | `.env`                    | 示例环境变量配置文件（模型地址、Azure Key）             |
-| `Dockerfile`              | 用于构建部署整个服务的 Docker 容器镜像                  |
+| `chroma/knowledge/`       | 知识库存放目录                                         |
 | `requirements.txt`        | 项目依赖清单，支持本地 pip 安装环境                     |
-| `turnserver.conf`         | WebRTC TURN 服务配置文件，确保音视频畅通
-
-```
+| `turnserver.conf`         | WebRTC TURN 服务配置文件，确保音视频畅通                |
 
 ------
 
